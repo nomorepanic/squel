@@ -1,0 +1,41 @@
+name: test
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: Python ${{matrix.python-version}}
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry
+        run: sudo apt-get install python3-poetry
+      
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: cache-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+  
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Run linting
+        run: poetry run flake8 --max-complexity=15 --exclude=./build,.venv,.tox,.eggs,dist,docs
+
+      - name: Run tests
+        run: poetry run coverage run -m pytest
+
+      - name: Collect coverage
+        run: poetry run coverage report

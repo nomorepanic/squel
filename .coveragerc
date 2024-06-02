@@ -1,0 +1,9 @@
+[run]
+source = squel
+branch = True
+
+[report]
+ignore_errors = True
+omit =
+    .venv/*
+    .pytest_cache/
